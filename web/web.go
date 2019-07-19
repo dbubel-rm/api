@@ -4,22 +4,46 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
 )
 
 //type Handler func(log *log.Logger, w http.ResponseWriter, r *http.Request) error
 type App struct {
-	Router *http.ServeMux
-	log    *log.Logger
-	mw     []func(handler http.Handler) http.Handler
+	Router           *http.ServeMux
+	log              *log.Logger
+	globalMiddleware []func(handler http.Handler) http.Handler
 }
 
 // New creates an App value that handle a set of routes for the application.
-func New(log *log.Logger, mw ...func(handler http.Handler) http.Handler) *App {
+func New(mux *http.ServeMux, log *log.Logger, mw ...func(handler http.Handler) http.Handler) *App {
 	return &App{
-		Router: http.NewServeMux(),
-		log:    log,
-		mw:     mw,
+		Router:           mux,
+		log:              log,
+		globalMiddleware: mw,
 	}
+}
+
+
+
+func allowGET(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("GET")
+		if r.Method == http.MethodGet {
+			next.ServeHTTP(w, r)
+		} else {
+			Respond(w, nil, http.StatusMethodNotAllowed)
+		}
+	})
+}
+func allowPOST(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("POST")
+		if r.Method == http.MethodPost {
+			next.ServeHTTP(w, r)
+		} else {
+			Respond(w, nil, http.StatusMethodNotAllowed)
+		}
+	})
 }
 
 // Handle is our mechanism for mounting Handlers for a given HTTP verb and path
@@ -30,11 +54,28 @@ func (a *App) Handle(verb, path string, finalHandler http.HandlerFunc, middlware
 	h = http.HandlerFunc(finalHandler)
 
 	for i := len(middlwares) - 1; i >= 0; i-- {
-		fmt.Println(i)
 		if middlwares[i] != nil {
 			h = middlwares[i](h)
 		}
 	}
+
+	if verb == http.MethodGet {
+		a.globalMiddleware = append(a.globalMiddleware, allowGET)
+	} else if verb == http.MethodPost {
+		a.globalMiddleware = append(a.globalMiddleware, allowPOST)
+	} else {
+		log.Fatalln("Invalid Method")
+	}
+
+
+	// global middlewares
+	for i := len(a.globalMiddleware) - 1; i >= 0; i-- {
+		if a.globalMiddleware[i] != nil {
+			h = a.globalMiddleware[i](h)
+		}
+	}
+
+	a.log.Println("Adding route for", path)
 	a.Router.Handle(path, h)
 
 	//finalHandler := http.HandlerFunc(final)
