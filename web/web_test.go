@@ -20,7 +20,16 @@ const (
 
 func TestRouteSimple(t *testing.T) {
 	l := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
-	var app = New(l, nil)
+	mux := http.NewServeMux()
+
+	globalMiddle := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Println("Executing globalmiddle")
+			next.ServeHTTP(w, r)
+		})
+	}
+
+	var app = New(mux, l, globalMiddle)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Executing handler")
@@ -31,7 +40,7 @@ func TestRouteSimple(t *testing.T) {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Println("Executing middlewareOne")
 			next.ServeHTTP(w, r)
-			log.Println("m1 after")
+			//log.Println("m1 after")
 		})
 	}
 
@@ -40,12 +49,12 @@ func TestRouteSimple(t *testing.T) {
 			log.Println("Executing middlewareTwo")
 			return
 			next.ServeHTTP(w, r)
-			log.Println("m2 after")
+			//log.Println("m2 after")
 		})
 	}
 	app.Handle(http.MethodGet, "/test", testHandler, testMiddlware, testMiddlware2)
 
-	r := httptest.NewRequest(http.MethodGet, "/test", nil)
+	r := httptest.NewRequest(http.MethodPost, "/test", nil)
 	w := httptest.NewRecorder()
 
 	app.Router.ServeHTTP(w, r)
