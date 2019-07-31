@@ -22,6 +22,8 @@ func TestRouteSimple(t *testing.T) {
 	l := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 	mux := http.NewServeMux()
 
+
+
 	globalMiddle := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Println("Executing globalmiddle")
@@ -52,6 +54,7 @@ func TestRouteSimple(t *testing.T) {
 			//log.Println("m2 after")
 		})
 	}
+
 	app.Handle(http.MethodGet, "/test", testHandler, testMiddlware, testMiddlware2)
 
 	r := httptest.NewRequest(http.MethodPost, "/test", nil)

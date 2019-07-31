@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -13,9 +12,9 @@ type JSONError struct {
 }
 
 // RespondError sends JSON describing the error
-//func RespondError(log *log.Logger, w http.ResponseWriter, err error, code int) {
-//	Respond(log, w, JSONError{Error: err.Error()}, code)
-//}
+func RespondError( w http.ResponseWriter, err error, code int) {
+	Respond(w, JSONError{Error: err.Error()}, code)
+}
 
 // Respond sends JSON to the client.
 // If code is StatusNoContent, v is expected to be nil.
@@ -29,10 +28,8 @@ func Respond(w http.ResponseWriter, data interface{}, code int) {
 	// Marshal the data into a JSON string.
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		log.Printf("%s : Respond Marshalling JSON response\n", err)
-
 		// Should respond with internal server error.
-		//RespondError(log, w, err, http.StatusInternalServerError)
+		RespondError( w, err, http.StatusInternalServerError)
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 //type Handler func(log *log.Logger, w http.ResponseWriter, r *http.Request) error
 type App struct {
 	Router           *http.ServeMux
+
 	log              *log.Logger
 	globalMiddleware []func(handler http.Handler) http.Handler
 }
@@ -23,11 +24,8 @@ func New(mux *http.ServeMux, log *log.Logger, mw ...func(handler http.Handler) h
 	}
 }
 
-
-
 func allowGET(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("GET")
 		if r.Method == http.MethodGet {
 			next.ServeHTTP(w, r)
 		} else {
@@ -35,9 +33,9 @@ func allowGET(next http.Handler) http.Handler {
 		}
 	})
 }
+
 func allowPOST(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("POST")
 		if r.Method == http.MethodPost {
 			next.ServeHTTP(w, r)
 		} else {
@@ -46,6 +44,32 @@ func allowPOST(next http.Handler) http.Handler {
 	})
 }
 
+func allowOPTIONS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+		} else {
+			Respond(w, nil, http.StatusMethodNotAllowed)
+		}
+	})
+}
+
+func CORS() func(next http.Handler) http.Handler{
+
+}
+
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+		} else {
+			Respond(w, nil, http.StatusMethodNotAllowed)
+		}
+	})
+}
+
+
+
 // Handle is our mechanism for mounting Handlers for a given HTTP verb and path
 // pair, this makes for really easy, convenient routing.
 func (a *App) Handle(verb, path string, finalHandler http.HandlerFunc, middlwares ...func(handler http.Handler) http.Handler) {
@@ -53,6 +77,8 @@ func (a *App) Handle(verb, path string, finalHandler http.HandlerFunc, middlware
 	var h http.Handler
 	h = http.HandlerFunc(finalHandler)
 
+
+	// Route middle wares
 	for i := len(middlwares) - 1; i >= 0; i-- {
 		if middlwares[i] != nil {
 			h = middlwares[i](h)
