@@ -2,94 +2,78 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
-//type Handler func(log *log.Logger, w http.ResponseWriter, r *http.Request) error
+type rr map[string]interface{}
+type MiddleWare func(handler http.Handler) http.Handler
+
 type App struct {
 	Router           *http.ServeMux
 	log              *log.Logger
-	globalMiddleware []func(handler http.Handler) http.Handler
+	globalMiddleware []MiddleWare
 }
 
 // New creates an App value that handle a set of routes for the application.
-func New(mux *http.ServeMux, mw ...func(handler http.Handler) http.Handler) *App {
+func New(mux *http.ServeMux, mw ...MiddleWare) *App {
 	return &App{
 		Router:           mux,
-		log:              log.New(os.Stdout, "API", log.LstdFlags|log.Lmicroseconds|log.Lshortfile),
+		log:              log.New(os.Stdout, "", 0),
 		globalMiddleware: mw,
 	}
 }
 
-func allowGET(next http.Handler) http.Handler {
+func GET(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			next.ServeHTTP(w, r)
 		} else {
-			Respond(next, w,r, nil, http.StatusMethodNotAllowed)
+			Respond(next, w, r, rr{"error": "Method Now Allowed"}, http.StatusMethodNotAllowed)
 		}
 	})
 }
 
-func allowPOST(next http.Handler) http.Handler {
+func POST(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			next.ServeHTTP(w, r)
 		} else {
-			Respond(next, w, r,nil, http.StatusMethodNotAllowed)
+			Respond(next, w, r, rr{"error": "Method Now Allowed"}, http.StatusMethodNotAllowed)
 		}
 	})
 }
 
-func requestStart(next http.Handler) http.Handler {
+func Start(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Println("Start")
-		//next.ServeHTTP(w, r)
 		ctx := context.WithValue(r.Context(), "ts", time.Now())
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-//func requestEnd(next http.Handler) http.Handler {
-//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		fmt.Println("End")
-//		next.ServeHTTP(w, r)
-//	})
-//}
-
-
-func X(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[API][%s] %v", r.Method, time.Now().Sub(r.Context().Value("ts").(time.Time)))
+func End(l *log.Logger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		responseTime := time.Now().Sub(r.Context().Value("ts").(time.Time))
+		fmt.Println(responseTime.String())
+		json, _ := json.Marshal(rr{
+			"method":       r.Method,
+			"url":          r.RequestURI,
+			"contentLenth": r.ContentLength,
+			"ip":           r.RemoteAddr,
+			"ts":           responseTime.String(),
+		})
+		l.Println(string(json))
+	}
 }
 
-func allowOPTIONS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions {
-			next.ServeHTTP(w, r)
-		} else {
-			Respond(next,w, r,nil, http.StatusMethodNotAllowed)
-		}
-	})
-}
-
-// Handle is our mechanism for mounting Handlers for a given HTTP verb and path
-// pair, this makes for really easy, convenient routing.
-func (a *App) Handle(verb, path string, finalHandler func(handler http.Handler) http.Handler, middlwares ...func(handler http.Handler) http.Handler) {
-
-	//testHandler := func(w http.ResponseWriter, r *http.Request) {
-	//	log.Println("Executing handler")
-	//	Respond(w, "hi", http.StatusOK)
-	//}
-
-	//testMiddlware2 := func(next http.Handler) http.Handler {
-	//	return finalHandler
-	//}
+func (a *App) Handle(verb MiddleWare, path string, finalHandler MiddleWare, middlwares ...MiddleWare) {
 
 	var h http.Handler
-	h = http.HandlerFunc(X)
+	h = http.HandlerFunc(End(a.log))
 
 	// Route middle wares
 	middlwares = append(middlwares, finalHandler)
@@ -100,22 +84,21 @@ func (a *App) Handle(verb, path string, finalHandler func(handler http.Handler) 
 		}
 	}
 
-	if verb == http.MethodGet {
-		a.globalMiddleware = append(a.globalMiddleware, allowGET)
-	} else if verb == http.MethodPost {
-		a.globalMiddleware = append(a.globalMiddleware, allowPOST)
-	} else {
-		log.Fatalln("Invalid Method")
-	}
+	a.globalMiddleware = append(a.globalMiddleware, verb)
+	//if verb == http.MethodGet {
+	//	a.globalMiddleware = append(a.globalMiddleware, GET)
+	//} else if verb == http.MethodPost {
+	//	a.globalMiddleware = append(a.globalMiddleware, POST)
+	//} else {
+	//	log.Fatalln("Invalid Method")
+	//}
 
-	a.globalMiddleware = append([]func(handler http.Handler) http.Handler{requestStart}, a.globalMiddleware...)
-	// global middlewares
+	a.globalMiddleware = append([]MiddleWare{Start}, a.globalMiddleware...)
 	for i := len(a.globalMiddleware) - 1; i >= 0; i-- {
 		if a.globalMiddleware[i] != nil {
 			h = a.globalMiddleware[i](h)
 		}
 	}
-	//middlwares = append(middlwares, requestStart)
 
 	a.log.Println("Adding route for", path)
 	a.Router.Handle(path, h)
@@ -153,6 +136,3 @@ func (a *App) Handle(verb, path string, finalHandler func(handler http.Handler) 
 	// a.Router.Handle("OPTIONS", path, f)
 }
 
-//func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-//	a.ServeHTTP(w, r)
-//}

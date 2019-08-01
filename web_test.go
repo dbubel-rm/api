@@ -17,7 +17,6 @@ const (
 )
 
 func TestRouteSimple(t *testing.T) {
-	//l := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 	mux := http.NewServeMux()
 
 	globalMiddle := func(next http.Handler) http.Handler {
@@ -28,12 +27,6 @@ func TestRouteSimple(t *testing.T) {
 	}
 
 	var app = New(mux, globalMiddle)
-
-	//testHandler := func(w http.ResponseWriter, r *http.Request) {
-	//	log.Println("Executing handler")
-	//	Respond(w, "hi", http.StatusOK)
-	//
-	//}
 
 	testHandler := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +52,7 @@ func TestRouteSimple(t *testing.T) {
 		})
 	}
 
-	app.Handle(http.MethodGet, "/test", testHandler, testMiddlware, testMiddlware2)
+	app.Handle(GET, "/test", testHandler, testMiddlware, testMiddlware2)
 
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
@@ -94,6 +87,3 @@ func TestRouteSimple(t *testing.T) {
 //	assert.JSONEq(t, `{"key": "value"}`, string(b))
 //}
 
-func TestMiddle(t *testing.T) {
-
-}
