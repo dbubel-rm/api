@@ -1,4 +1,4 @@
-package web
+package api
 
 import (
 	"encoding/json"
@@ -12,13 +12,13 @@ type JSONError struct {
 }
 
 // RespondError sends JSON describing the error
-func RespondError( w http.ResponseWriter, err error, code int) {
-	Respond(w, JSONError{Error: err.Error()}, code)
+func RespondError(next http.Handler, w http.ResponseWriter, r *http.Request, err error, code int) {
+	Respond(next, w, r, JSONError{Error: err.Error()}, code)
 }
 
 // Respond sends JSON to the client.
 // If code is StatusNoContent, v is expected to be nil.
-func Respond(w http.ResponseWriter, data interface{}, code int) {
+func Respond(next http.Handler, w http.ResponseWriter, r *http.Request, data interface{}, code int) {
 
 	if code == http.StatusNoContent || data == nil {
 		w.WriteHeader(code)
@@ -29,7 +29,7 @@ func Respond(w http.ResponseWriter, data interface{}, code int) {
 	jsonData, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		// Should respond with internal server error.
-		RespondError( w, err, http.StatusInternalServerError)
+		RespondError(next, w, r, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -41,4 +41,7 @@ func Respond(w http.ResponseWriter, data interface{}, code int) {
 
 	// Send the result back to the client.
 	w.Write(jsonData)
+
+	next.ServeHTTP(w, r)
+
 }

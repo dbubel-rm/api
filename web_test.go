@@ -1,4 +1,4 @@
-package web
+package api
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
-
 	"testing"
 )
 
@@ -19,10 +17,8 @@ const (
 )
 
 func TestRouteSimple(t *testing.T) {
-	l := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+	//l := log.New(os.Stdout, "", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 	mux := http.NewServeMux()
-
-
 
 	globalMiddle := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -31,11 +27,20 @@ func TestRouteSimple(t *testing.T) {
 		})
 	}
 
-	var app = New(mux, l, globalMiddle)
+	var app = New(mux, globalMiddle)
 
-	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Executing handler")
-		Respond(w, "hi", http.StatusOK)
+	//testHandler := func(w http.ResponseWriter, r *http.Request) {
+	//	log.Println("Executing handler")
+	//	Respond(w, "hi", http.StatusOK)
+	//
+	//}
+
+	testHandler := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Println("Executing handler")
+			Respond(next, w, r, "hi", http.StatusOK)
+			//next.ServeHTTP(w, r)
+		})
 	}
 
 	testMiddlware := func(next http.Handler) http.Handler {
@@ -49,7 +54,6 @@ func TestRouteSimple(t *testing.T) {
 	testMiddlware2 := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Println("Executing middlewareTwo")
-			return
 			next.ServeHTTP(w, r)
 			//log.Println("m2 after")
 		})
@@ -57,13 +61,13 @@ func TestRouteSimple(t *testing.T) {
 
 	app.Handle(http.MethodGet, "/test", testHandler, testMiddlware, testMiddlware2)
 
-	r := httptest.NewRequest(http.MethodPost, "/test", nil)
+	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
 
 	app.Router.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, "Response code should be 200")
 	b, _ := ioutil.ReadAll(w.Body)
-	fmt.Println(string(b))
+	fmt.Println("BODY", string(b))
 }
 
 //
