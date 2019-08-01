@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 
 	"log"
@@ -18,7 +19,7 @@ const (
 )
 
 func TestRouteSimple(t *testing.T) {
-	mux := http.NewServeMux()
+	mux := httprouter.New()
 
 	globalMiddle := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

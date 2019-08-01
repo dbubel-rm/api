@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/julienschmidt/httprouter"
 
 	"net/http"
 	"os"
@@ -17,13 +18,13 @@ var l *log.Logger
 
 
 type App struct {
-	Router           *http.ServeMux
+	Router           *httprouter.Router
 	globalMiddleware []MiddleWare
 	logging          bool
 }
 
 // New creates an App value that handle a set of routes for the application.
-func New(mux *http.ServeMux, mw ...MiddleWare) *App {
+func New(mux *httprouter.Router, mw ...MiddleWare) *App {
 	l = log.New()
 	//l.SetReportCaller(true)
 	l.SetFormatter(&log.JSONFormatter{})
@@ -36,17 +37,17 @@ func New(mux *http.ServeMux, mw ...MiddleWare) *App {
 	}
 }
 
-func (a *App) allowMethod(method string) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == method {
-				next.ServeHTTP(w, r)
-			} else {
-				Respond(w, r, map[string]interface{}{"error": "Method Now Allowed"}, http.StatusMethodNotAllowed)
-			}
-		})
-	}
-}
+//func (a *App) allowMethod(method string) func(next http.Handler) http.Handler {
+//	return func(next http.Handler) http.Handler {
+//		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//			if r.Method == method {
+//				next.ServeHTTP(w, r)
+//			} else {
+//				Respond(w, r, map[string]interface{}{"error": "Method Now Allowed"}, http.StatusMethodNotAllowed)
+//			}
+//		})
+//	}
+//}
 
 func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares ...MiddleWare) {
 
@@ -61,23 +62,23 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 	}
 
 	// Assign a middleware that will only allow the specified verb
-	if verb == http.MethodGet {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodGet))
-	} else if verb == http.MethodOptions {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodOptions))
-	} else if verb == http.MethodDelete {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodDelete))
-	} else if verb == http.MethodPost {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodPost))
-	} else if verb == http.MethodPut {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodPut))
-	} else if verb == http.MethodConnect {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodConnect))
-	} else if verb == http.MethodHead {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodHead))
-	} else if verb == http.MethodTrace {
-		a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodTrace))
-	}
+	//if verb == http.MethodGet {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodGet))
+	//} else if verb == http.MethodOptions {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodOptions))
+	//} else if verb == http.MethodDelete {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodDelete))
+	//} else if verb == http.MethodPost {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodPost))
+	//} else if verb == http.MethodPut {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodPut))
+	//} else if verb == http.MethodConnect {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodConnect))
+	//} else if verb == http.MethodHead {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodHead))
+	//} else if verb == http.MethodTrace {
+	//	a.globalMiddleware = append(a.globalMiddleware, a.allowMethod(http.MethodTrace))
+	//}
 
 	builtinMiddlwares := []MiddleWare{
 		// Add a start timer middleware to the beginning of global middlware slice
@@ -100,7 +101,8 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 
 	//a.debug(rr{"path": path, "msg": "added route"})
 	l.WithFields(log.Fields{"path":path}).Info("added route")
-	a.Router.Handle(path, h)
+	//a.Router.Handle(path, h)
+	a.Router.Handler(verb,path,h)
 	//a.Router.HandleFunc()
 
 	//finalHandler := http.HandlerFunc(final)
