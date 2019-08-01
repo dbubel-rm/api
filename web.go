@@ -21,6 +21,7 @@ type App struct {
 	Router           *httprouter.Router
 	globalMiddleware []MiddleWare
 	logging          bool
+
 }
 
 // New creates an App value that handle a set of routes for the application.
