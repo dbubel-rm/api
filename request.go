@@ -35,7 +35,6 @@ func Unmarshal(r io.Reader, v interface{}) error {
 	if err := json.NewDecoder(r).Decode(v); err != nil {
 		return err
 	}
-
 	var inv InvalidError
 	if fve := validate.Struct(v); fve != nil {
 		for _, fe := range fve.(validator.ValidationErrors) {
@@ -43,6 +42,5 @@ func Unmarshal(r io.Reader, v interface{}) error {
 		}
 		return inv
 	}
-
 	return nil
 }

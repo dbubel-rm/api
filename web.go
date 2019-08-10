@@ -38,6 +38,10 @@ func New(mux *httprouter.Router, mw ...MiddleWare) *App {
 	}
 }
 
+func (a *App) SetLoggingLevel(level log.Level) {
+	l.SetLevel(level)
+}
+
 //func (a *App) allowMethod(method string) func(next http.Handler) http.Handler {
 //	return func(next http.Handler) http.Handler {
 //		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
