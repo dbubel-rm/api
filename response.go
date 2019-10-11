@@ -9,10 +9,10 @@ import (
 )
 
 func RespondError(w http.ResponseWriter, r *http.Request, err error, code int) {
-	Respond(w, r, map[string]interface{}{"error": err.Error()}, code)
+	RespondJSON(w, r, map[string]interface{}{"error": err.Error()}, code)
 }
 
-func Respond(w http.ResponseWriter, r *http.Request, data interface{}, code int) {
+func RespondJSON(w http.ResponseWriter, r *http.Request, data interface{}, code int) {
 	if code == http.StatusNoContent || data == nil {
 		w.WriteHeader(code)
 		return
@@ -31,12 +31,10 @@ func Respond(w http.ResponseWriter, r *http.Request, data interface{}, code int)
 	responseTime := time.Now().Sub(r.Context().Value("ts").(time.Time))
 
 	l.WithFields(log.Fields{"method": r.Method,
-		"url":          r.RequestURI,
-		"contentLenth": r.ContentLength,
-		"ip":           r.RemoteAddr,
-		"ts":           responseTime.String(),
-		"code":         code,
+		"url":        r.RequestURI,
+		"contentLen": r.ContentLength,
+		"ip":         r.RemoteAddr,
+		"ts":         responseTime.String(),
+		"code":       code,
 	}).Info("request details")
-
-	//next.ServeHTTP(w, r)
 }

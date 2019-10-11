@@ -17,7 +17,7 @@ func TestRouteSimple(t *testing.T) {
 	app.SetLoggingLevel(logrus.WarnLevel)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		Respond(w, r, map[string]interface{}{"msg": "payload"}, http.StatusOK)
+		RespondJSON(w, r, map[string]interface{}{"msg": "payload"}, http.StatusOK)
 	}
 
 	app.Handle(http.MethodGet, "/test", testHandler)
@@ -43,7 +43,7 @@ func TestMiddleware(t *testing.T) {
 	var app = New(mux, globalMiddle)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		Respond(w, r, "hi", http.StatusOK)
+		RespondJSON(w, r, "hi", http.StatusOK)
 	}
 
 	testMiddlware := func(next http.Handler) http.Handler {
