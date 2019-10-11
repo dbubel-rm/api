@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 
-
 	"net/http"
 	"time"
 )
@@ -31,15 +30,13 @@ func Respond(w http.ResponseWriter, r *http.Request, data interface{}, code int)
 
 	responseTime := time.Now().Sub(r.Context().Value("ts").(time.Time))
 
-
-	l.WithFields(log.Fields{"method":       r.Method,
+	l.WithFields(log.Fields{"method": r.Method,
 		"url":          r.RequestURI,
 		"contentLenth": r.ContentLength,
 		"ip":           r.RemoteAddr,
 		"ts":           responseTime.String(),
-		"code": code,
+		"code":         code,
 	}).Info("request details")
-
 
 	//next.ServeHTTP(w, r)
 }

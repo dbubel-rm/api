@@ -14,14 +14,13 @@ import (
 //type rr map[string]interface{}
 type MiddleWare func(handler http.Handler) http.Handler
 type Handler func(w http.ResponseWriter, r *http.Request)
-var l *log.Logger
 
+var l *log.Logger
 
 type App struct {
 	Router           *httprouter.Router
 	globalMiddleware []MiddleWare
 	logging          bool
-
 }
 
 // New creates an App value that handle a set of routes for the application.
@@ -73,6 +72,6 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
-	l.WithFields(log.Fields{"path":path}).Info("added route")
-	a.Router.Handler(verb,path,h)
+	l.WithFields(log.Fields{"path": path}).Info("added route")
+	a.Router.Handler(verb, path, h)
 }

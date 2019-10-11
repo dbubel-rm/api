@@ -17,7 +17,7 @@ func TestRouteSimple(t *testing.T) {
 	app.SetLoggingLevel(logrus.WarnLevel)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		Respond(w, r, map[string]interface{}{"msg":"payload"}, http.StatusOK)
+		Respond(w, r, map[string]interface{}{"msg": "payload"}, http.StatusOK)
 	}
 
 	app.Handle(http.MethodGet, "/test", testHandler)
@@ -27,8 +27,8 @@ func TestRouteSimple(t *testing.T) {
 	app.Router.ServeHTTP(w, r)
 
 	assert.Equal(t, http.StatusOK, w.Code, "Response code should be 200")
-	json, _:= ioutil.ReadAll(w.Body)
-	assert.JSONEq(t,`{"msg":"payload"}`,string(json) )
+	json, _ := ioutil.ReadAll(w.Body)
+	assert.JSONEq(t, `{"msg":"payload"}`, string(json))
 }
 
 func TestMiddleware(t *testing.T) {
@@ -65,7 +65,5 @@ func TestMiddleware(t *testing.T) {
 
 	app.Router.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, "Response code should be 200")
-	_, _ := ioutil.ReadAll(w.Body)
-
+	//_, _ := ioutil.ReadAll(w.Body)
 }
-
