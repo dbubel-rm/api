@@ -33,7 +33,7 @@ func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interfac
 		"url":        r.RequestURI,
 		"contentLen": r.ContentLength,
 		"ip":         r.RemoteAddr,
-		"ms":          time.Now().Sub(r.Context().Value("ts").(time.Time)).Milliseconds(),
+		"ms":         time.Now().Sub(r.Context().Value("ts").(time.Time)).Milliseconds(),
 		"code":       code,
 	}).Info()
 }

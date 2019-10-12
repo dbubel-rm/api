@@ -12,7 +12,7 @@ import (
 
 func TestRouteSimple(t *testing.T) {
 
-	var app = New(nil)
+	var app = New()
 	app.SetLoggingLevel(logrus.DebugLevel)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,6 @@ func TestRouteSimple(t *testing.T) {
 
 func TestMiddleware(t *testing.T) {
 
-
 	globalMiddle := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
@@ -44,7 +43,8 @@ func TestMiddleware(t *testing.T) {
 		})
 	}
 
-	var app = New( globalMiddle, globalMiddle2)
+	var app = New()
+	app.GlobalMiddleware(globalMiddle, globalMiddle2)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
 		RespondJSON(w, r, http.StatusOK, "hi")

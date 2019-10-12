@@ -17,8 +17,8 @@ func NewEnpoint(method, path string, endpointHandler Handler, mid ...MiddleWare)
 	}
 }
 
-func (e Endpoints) Use(mid...MiddleWare) {
-	for i:=0; i < len(e);i++{
+func (e Endpoints) Use(mid ...MiddleWare) {
+	for i := 0; i < len(e); i++ {
 		e[i].MiddlewareHandlers = append(e[i].MiddlewareHandlers, mid...)
 	}
 }

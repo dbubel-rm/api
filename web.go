@@ -21,7 +21,7 @@ type App struct {
 }
 
 // New creates an App value that handle a set of routes for the application.
-func New(mw ...MiddleWare) *App {
+func New() *App {
 	//l.SetReportCaller(true)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
@@ -29,8 +29,11 @@ func New(mw ...MiddleWare) *App {
 
 	return &App{
 		Router:           httprouter.New(),
-		globalMiddleware: mw,
 	}
+}
+
+func (a *App) GlobalMiddleware(mid ...MiddleWare) {
+	a.globalMiddleware = mid
 }
 
 func (a *App) SetLoggingLevel(level log.Level) {
@@ -44,7 +47,6 @@ func (a *App) Endpoints(endpoints Endpoints) {
 }
 
 func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares ...MiddleWare) {
-
 	// Our handler that we will pass to the router
 	var h http.Handler = http.HandlerFunc(finalHandler)
 
