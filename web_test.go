@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -12,12 +11,12 @@ import (
 )
 
 func TestRouteSimple(t *testing.T) {
-	mux := httprouter.New()
-	var app = New(mux, nil)
-	app.SetLoggingLevel(logrus.WarnLevel)
+
+	var app = New(nil)
+	app.SetLoggingLevel(logrus.DebugLevel)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		RespondJSON(w, r, map[string]interface{}{"msg": "payload"}, http.StatusOK)
+		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"msg": "payload"})
 	}
 
 	app.Handle(http.MethodGet, "/test", testHandler)
@@ -32,18 +31,23 @@ func TestRouteSimple(t *testing.T) {
 }
 
 func TestMiddleware(t *testing.T) {
-	mux := httprouter.New()
+
 
 	globalMiddle := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
 		})
 	}
+	globalMiddle2 := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
+	}
 
-	var app = New(mux, globalMiddle)
+	var app = New( globalMiddle, globalMiddle2)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request) {
-		RespondJSON(w, r, "hi", http.StatusOK)
+		RespondJSON(w, r, http.StatusOK, "hi")
 	}
 
 	testMiddlware := func(next http.Handler) http.Handler {

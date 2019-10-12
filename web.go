@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/julienschmidt/httprouter"
 
 	"net/http"
@@ -11,34 +12,35 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//type rr map[string]interface{}
 type MiddleWare func(handler http.Handler) http.Handler
 type Handler func(w http.ResponseWriter, r *http.Request)
-
-var l *log.Logger
 
 type App struct {
 	Router           *httprouter.Router
 	globalMiddleware []MiddleWare
-	logging          bool
 }
 
 // New creates an App value that handle a set of routes for the application.
-func New(mux *httprouter.Router, mw ...MiddleWare) *App {
-	l = log.New()
+func New(mw ...MiddleWare) *App {
 	//l.SetReportCaller(true)
-	l.SetFormatter(&log.JSONFormatter{})
-	l.SetOutput(os.Stdout)
-	l.SetLevel(log.DebugLevel)
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
 
 	return &App{
-		Router:           mux,
+		Router:           httprouter.New(),
 		globalMiddleware: mw,
 	}
 }
 
 func (a *App) SetLoggingLevel(level log.Level) {
-	l.SetLevel(level)
+	log.SetLevel(level)
+}
+
+func (a *App) Endpoints(endpoints Endpoints) {
+	for i := 0; i < len(endpoints); i++ {
+		a.Handle(endpoints[i].Method, endpoints[i].Path, endpoints[i].EndpointHandler, endpoints[i].MiddlewareHandlers...)
+	}
 }
 
 func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares ...MiddleWare) {
@@ -53,17 +55,15 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
-	builtinMiddlwares := []MiddleWare{
-		// Add a start timer middleware to the beginning of global middlware slice
+	a.globalMiddleware = append([]MiddleWare{
+		// Add a start timer middleware to the beginning of global middleware slice
 		func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				ctx := context.WithValue(r.Context(), "ts", time.Now())
 				next.ServeHTTP(w, r.WithContext(ctx))
 			})
 		},
-	}
-
-	a.globalMiddleware = append(builtinMiddlwares, a.globalMiddleware...)
+	}, a.globalMiddleware...)
 
 	// Wrap handler in global middleware
 	for i := len(a.globalMiddleware) - 1; i >= 0; i-- {
@@ -72,6 +72,6 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
-	l.WithFields(log.Fields{"path": path}).Info("added route")
+	log.WithFields(log.Fields{"path": path}).Debug("added route")
 	a.Router.Handler(verb, path, h)
 }
