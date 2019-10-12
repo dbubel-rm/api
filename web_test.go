@@ -1,7 +1,8 @@
 package api
 
 import (
-	"github.com/sirupsen/logrus"
+	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -13,9 +14,9 @@ import (
 func TestRouteSimple(t *testing.T) {
 
 	var app = New()
-	app.SetLoggingLevel(logrus.DebugLevel)
+	app.SetLoggingLevel(log.InfoLevel)
 
-	testHandler := func(w http.ResponseWriter, r *http.Request) {
+	testHandler := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"msg": "payload"})
 	}
 
@@ -32,34 +33,34 @@ func TestRouteSimple(t *testing.T) {
 
 func TestMiddleware(t *testing.T) {
 
-	globalMiddle := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+	globalMiddle := func(next Handler) Handler {
+		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+			next(w, r, params)
+		}
 	}
-	globalMiddle2 := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+	globalMiddle2 := func(next Handler) Handler {
+		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+			next(w, r, params)
+		}
 	}
 
 	var app = New()
 	app.GlobalMiddleware(globalMiddle, globalMiddle2)
 
-	testHandler := func(w http.ResponseWriter, r *http.Request) {
+	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, "hi")
 	}
 
-	testMiddlware := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+	testMiddlware := func(next Handler) Handler {
+		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+			next(w, r, params)
+		}
 	}
 
-	testMiddlware2 := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
+	testMiddlware2 := func(next Handler) Handler {
+		return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+			next(w, r, params)
+		}
 	}
 
 	app.Handle(http.MethodGet, "/test", testHandler, testMiddlware, testMiddlware2)

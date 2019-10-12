@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/brianvoe/gofakeit"
 	api "github.com/dbubel/api"
+	"github.com/julienschmidt/httprouter"
 	"time"
 
 	"net/http"
@@ -16,6 +17,7 @@ func main() {
 
 	endpoints := api.Endpoints{
 		api.NewEnpoint(http.MethodGet, "/test2", handleit),
+		api.NewEnpoint(http.MethodGet, "/test2/:paramOne", handleit),
 	}
 
 	endpoints.Use(middlethat)
@@ -32,11 +34,10 @@ func main() {
 
 	fmt.Println("running...")
 	a.ListenAndServe()
-
 }
 
-func handleit(w http.ResponseWriter, r *http.Request) {
-
+func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	fmt.Println(params.ByName("paramOne"))
 	type Foo struct {
 		ID       string `json:"_id"`
 		Index    int    `json:"index"`
@@ -47,27 +48,27 @@ func handleit(w http.ResponseWriter, r *http.Request) {
 	api.RespondJSON(w, r, http.StatusOK, f)
 }
 
-func middlethis(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func middlethis(next api.Handler) api.Handler {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		time.Sleep(time.Millisecond)
 		fmt.Println("in middlethis")
 		ctx := context.WithValue(r.Context(), "middlethis", "1")
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+		next(w, r.WithContext(ctx), params)
+	}
 }
 
-func middlethat(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func middlethat(next api.Handler) api.Handler {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		time.Sleep(time.Millisecond)
 		fmt.Println("in middlethat")
 		ctx := context.WithValue(r.Context(), "middlethat", "2")
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+		next(w, r.WithContext(ctx), params)
+	}
 }
 
-func globalmiddle(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func globalmiddle(next api.Handler) api.Handler {
+	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		fmt.Println("in global")
-		next.ServeHTTP(w, r)
-	})
+		next(w, r, params)
+	}
 }
