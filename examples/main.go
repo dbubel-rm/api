@@ -36,6 +36,7 @@ func main() {
 }
 
 func handleit(w http.ResponseWriter, r *http.Request) {
+
 	type Foo struct {
 		ID       string `json:"_id"`
 		Index    int    `json:"index"`
