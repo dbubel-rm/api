@@ -3,9 +3,8 @@ package api
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -14,43 +13,18 @@ type Handler func(w http.ResponseWriter, r *http.Request, params httprouter.Para
 type App struct {
 	Router         *httprouter.Router
 	appMiddlewares []MiddleWare
+	log            *logrus.Logger
 }
 
-func NewBasic() *App {
-	//l.SetReportCaller(true)
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+func NewBasic(logger *logrus.Logger) *App {
 	return &App{
 		Router: httprouter.New(),
-	}
-}
-
-func NewStandard() *App {
-	//l.SetReportCaller(true)
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-
-	r := httprouter.New()
-	r.MethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Not allowed"))
-	})
-	r.PanicHandler =  func(w http.ResponseWriter, r *http.Request, data interface{}) {
-		w.Write([]byte("Not allowed"))
-	}
-
-	return &App{
-		Router:r ,
+		log:    logger,
 	}
 }
 
 func (a *App) GlobalMiddleware(mid ...MiddleWare) {
 	a.appMiddlewares = mid
-}
-
-func (a *App) SetLoggingLevel(level log.Level) {
-	log.SetLevel(level)
 }
 
 func (a *App) Endpoints(endpoints Endpoints) {
@@ -84,11 +58,8 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
-	h1 := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		// Essentially wrap our handler chain in a httprouter handle
-		finalHandler(w, r, params)
-	}
-
-	a.Router.Handle(verb, path, h1)
-	log.WithFields(log.Fields{"path": path}).Debug("added route")
+	a.Router.Handle(verb, path, func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+		finalHandler(w, r, params) // our wrapped function chain
+	})
+	a.log.WithFields(logrus.Fields{"path": path}).Debug("added route")
 }

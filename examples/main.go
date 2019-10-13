@@ -4,16 +4,26 @@ import (
 	"context"
 	"fmt"
 	"github.com/brianvoe/gofakeit"
-	api "github.com/dbubel/api"
+	"github.com/dbubel/api"
 	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"net/http"
 )
 
 func main() {
-	app := api.NewBasic()
+	log := logrus.New()
+	log.SetFormatter(&logrus.JSONFormatter{
+		PrettyPrint:true,
+	})
+	log.SetLevel(logrus.DebugLevel)
+	app := api.NewBasic(log)
+
+
+
 	app.GlobalMiddleware(globalmiddle)
+	app.Router.RedirectTrailingSlash = true
 
 	endpoints := api.Endpoints{
 		api.NewEnpoint(http.MethodGet, "/test2", handleit),
@@ -23,6 +33,7 @@ func main() {
 	endpoints.Use(middlethat)
 	endpoints.Use(middlethis)
 	app.Endpoints(endpoints)
+
 
 	a := http.Server{
 		Addr:           ":8000",
