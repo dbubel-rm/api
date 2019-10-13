@@ -14,10 +14,9 @@ import (
 
 func main() {
 	log := logrus.New()
-	log.SetFormatter(&logrus.JSONFormatter{
-		PrettyPrint:true,
-	})
+	log.SetFormatter(&logrus.JSONFormatter{})
 	log.SetLevel(logrus.DebugLevel)
+
 	app := api.NewBasic(log)
 
 
@@ -35,20 +34,11 @@ func main() {
 	app.Endpoints(endpoints)
 
 
-	a := http.Server{
-		Addr:           ":8000",
-		Handler:        app.Router,
-		ReadTimeout:    time.Second * 10,
-		WriteTimeout:   time.Second * 10,
-		MaxHeaderBytes: 1 << 20,
-	}
-
-	fmt.Println("running...")
-	a.ListenAndServe()
+	app.StartAPI(":8000")
 }
 
 func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-
+	time.Sleep(time.Second * 8)
 	fmt.Println(params.ByName("paramOne"))
 	type Foo struct {
 		ID    string `json:"_id"`
