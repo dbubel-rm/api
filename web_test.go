@@ -13,7 +13,7 @@ import (
 
 func TestRouteSimple(t *testing.T) {
 
-	var app = New()
+	var app = NewBasic()
 	app.SetLoggingLevel(log.InfoLevel)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -44,7 +44,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	}
 
-	var app = New()
+	var app = NewBasic()
 	app.GlobalMiddleware(globalMiddle, globalMiddle2)
 
 	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {

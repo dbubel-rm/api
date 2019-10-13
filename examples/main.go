@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	app := api.New()
+	app := api.NewBasic()
 	app.GlobalMiddleware(globalmiddle)
 
 	endpoints := api.Endpoints{
@@ -37,10 +37,11 @@ func main() {
 }
 
 func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
 	fmt.Println(params.ByName("paramOne"))
 	type Foo struct {
-		ID       string `json:"_id"`
-		Index    int    `json:"index"`
+		ID    string `json:"_id"`
+		Index int    `json:"index"`
 	}
 	var f Foo
 	gofakeit.Struct(&f)

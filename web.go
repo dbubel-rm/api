@@ -3,31 +3,50 @@ package api
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"time"
-	log "github.com/sirupsen/logrus"
 )
 
-type MiddleWare func( Handler) Handler
+type MiddleWare func(Handler) Handler
 type Handler func(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 type App struct {
-	Router           *httprouter.Router
-	globalMiddleware []MiddleWare
+	Router         *httprouter.Router
+	appMiddlewares []MiddleWare
 }
 
-func New() *App {
+func NewBasic() *App {
 	//l.SetReportCaller(true)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.DebugLevel)
 	return &App{
-		Router:           httprouter.New(),
+		Router: httprouter.New(),
+	}
+}
+
+func NewStandard() *App {
+	//l.SetReportCaller(true)
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.DebugLevel)
+
+	r := httprouter.New()
+	r.MethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Not allowed"))
+	})
+	r.PanicHandler =  func(w http.ResponseWriter, r *http.Request, data interface{}) {
+		w.Write([]byte("Not allowed"))
+	}
+
+	return &App{
+		Router:r ,
 	}
 }
 
 func (a *App) GlobalMiddleware(mid ...MiddleWare) {
-	a.globalMiddleware = mid
+	a.appMiddlewares = mid
 }
 
 func (a *App) SetLoggingLevel(level log.Level) {
@@ -48,7 +67,7 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
-	a.globalMiddleware = append([]MiddleWare{
+	a.appMiddlewares = append([]MiddleWare{
 		// Add a start timer middleware to the beginning of global middleware slice
 		func(next Handler) Handler {
 			return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -56,12 +75,12 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 				next(w, r.WithContext(ctx), params)
 			}
 		},
-	}, a.globalMiddleware...)
+	}, a.appMiddlewares...)
 
 	// Wrap handler in global middleware
-	for i := len(a.globalMiddleware) - 1; i >= 0; i-- {
-		if a.globalMiddleware[i] != nil {
-			finalHandler = a.globalMiddleware[i](finalHandler)
+	for i := len(a.appMiddlewares) - 1; i >= 0; i-- {
+		if a.appMiddlewares[i] != nil {
+			finalHandler = a.appMiddlewares[i](finalHandler)
 		}
 	}
 
