@@ -68,15 +68,7 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 	apiLogger.WithFields(logrus.Fields{"path": path}).Debug("added route")
 }
 
-func(a *App) StartAPI(addr string) {
-	server := http.Server{
-		Addr:           addr,
-		Handler:        a.Router,
-		ReadTimeout:    time.Second * 10,
-		WriteTimeout:   time.Second * 10,
-		MaxHeaderBytes: 1 << 20,
-	}
-
+func StartAPI(server *http.Server) {
 	serverErrors := make(chan error, 1)
 	osSignals := make(chan os.Signal, 1)
 	signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
