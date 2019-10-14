@@ -5,8 +5,13 @@ import (
 	"net/http"
 )
 
-func RespondError(w http.ResponseWriter, r *http.Request, err error, code int, description... string) {
-	RespondJSON(w, r, code, map[string]interface{}{"error": err.Error(), "description": description})
+func RespondError(w http.ResponseWriter, r *http.Request, err error, code int, description ...string) {
+	switch err.(type) {
+	default:
+		RespondJSON(w, r, code, map[string]interface{}{"error": err.Error(), "description": description})
+	case InvalidError:
+		RespondJSON(w, r, code, err)
+	}
 }
 
 func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
@@ -24,7 +29,7 @@ func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interfac
 		w.WriteHeader(code)
 		w.Write(jsonData)
 	}
-	logHandler(r, code)
+	logRequest(r, code)
 }
 
 func Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
@@ -37,5 +42,5 @@ func Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
 		w.WriteHeader(code)
 		w.Write(data)
 	}
-	logHandler(r, code)
+	logRequest(r, code)
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 )
+
 var log100s = true
 var log200s = true
 var log300s = true
@@ -28,7 +29,7 @@ func Log500s(val bool) {
 	log500s = val
 }
 
-func logHandler(r *http.Request, code int) {
+func logRequest(r *http.Request, code int) {
 	printLog := func() {
 		apiLogger.WithFields(logrus.Fields{
 			"method":     r.Method,

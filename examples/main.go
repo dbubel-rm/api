@@ -12,12 +12,12 @@ import (
 
 func main() {
 
-
 	app := api.New()
 	app.GlobalMiddleware(globalmiddle)
 
 	endpoints := api.Endpoints{
 		api.NewEnpoint(http.MethodGet, "/test", handleit),
+		api.NewEnpoint(http.MethodPost, "/test", postit),
 		api.NewEnpoint(http.MethodGet, "/test/:paramOne", handleit),
 	}
 
@@ -34,6 +34,22 @@ func main() {
 	})
 }
 
+func postit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+
+	type Foo struct {
+		ID    string `json:"id"  validate:"required"`
+		Index int    `json:"index" validate:"required"`
+	}
+	var f Foo
+	err := api.UnmarshalJSON(r.Body, &f)
+	if err != nil {
+		api.RespondError(w, r, err, http.StatusOK)
+		return
+	}
+
+	api.RespondJSON(w, r, http.StatusOK, "SUIP")
+}
+
 func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	type Foo struct {
 		ID    string `json:"_id"`
@@ -44,8 +60,8 @@ func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 		ID:    "123456",
 		Index: 1337,
 	}
-	_=f
-	api.RespondError(w, r,errors.New("ERRO"), http.StatusBadRequest)
+	_ = f
+	api.RespondError(w, r, errors.New("ERRO"), http.StatusBadRequest)
 }
 
 func middlethis(next api.Handler) api.Handler {

@@ -71,7 +71,6 @@ func TestApp_RouteMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 	app.Router.ServeHTTP(w, r)
 
-
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp, _ := ioutil.ReadAll(w.Body)
 	assert.JSONEq(t, `{"message":"valueone"}`, string(resp))
