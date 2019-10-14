@@ -1,15 +1,15 @@
 package api
 
-type Endpoints []Endpoint
-type Endpoint struct {
+type Endpoints []endpoint
+type endpoint struct {
 	Method             string
 	Path               string
 	EndpointHandler    Handler
 	MiddlewareHandlers []MiddleWare
 }
 
-func NewEnpoint(method, path string, endpointHandler Handler, mid ...MiddleWare) Endpoint {
-	return Endpoint{
+func NewEnpoint(method, path string, endpointHandler Handler, mid ...MiddleWare) endpoint {
+	return endpoint{
 		Method:             method,
 		Path:               path,
 		EndpointHandler:    endpointHandler,
@@ -17,8 +17,8 @@ func NewEnpoint(method, path string, endpointHandler Handler, mid ...MiddleWare)
 	}
 }
 
-func (e Endpoints) Use(mid ...MiddleWare) {
-	for i := 0; i < len(e); i++ {
-		e[i].MiddlewareHandlers = append(e[i].MiddlewareHandlers, mid...)
+func (ep Endpoints) Use(mid ...MiddleWare) {
+	for i := 0; i < len(ep); i++ {
+		ep[i].MiddlewareHandlers = append(ep[i].MiddlewareHandlers, mid...)
 	}
 }

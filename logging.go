@@ -6,32 +6,16 @@ import (
 	"time"
 )
 
-var log100s = true
-var log200s = true
-var log300s = true
-var log400s = true
-var log500s = true
-var apiLogger *logrus.Logger
-
-func Log100s(val bool) {
-	log100s = val
-}
-func Log200s(val bool) {
-	log200s = val
-}
-func Log300s(val bool) {
-	log300s = val
-}
-func Log400s(val bool) {
-	log400s = val
-}
-func Log500s(val bool) {
-	log500s = val
-}
+var Log100s = true
+var Log200s = true
+var Log300s = true
+var Log400s = true
+var Log500s = true
+var ApiLogger *logrus.Logger
 
 func logRequest(r *http.Request, code int) {
 	printLog := func() {
-		apiLogger.WithFields(logrus.Fields{
+		ApiLogger.WithFields(logrus.Fields{
 			"method":     r.Method,
 			"url":        r.RequestURI,
 			"contentLen": r.ContentLength,
@@ -40,15 +24,15 @@ func logRequest(r *http.Request, code int) {
 		}).Info()
 	}
 
-	if code >= 100 && code < 200 && log100s {
+	if code >= 100 && code < 200 && Log100s {
 		printLog()
-	} else if code >= 200 && code < 300 && log200s {
+	} else if code >= 200 && code < 300 && Log200s {
 		printLog()
-	} else if code >= 300 && code < 400 && log300s {
+	} else if code >= 300 && code < 400 && Log300s {
 		printLog()
-	} else if code >= 400 && code < 500 && log400s {
+	} else if code >= 400 && code < 500 && Log400s {
 		printLog()
-	} else if code >= 500 && code < 500 && log500s {
+	} else if code >= 500 && code < 500 && Log500s {
 		printLog()
 	}
 }

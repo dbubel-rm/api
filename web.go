@@ -20,9 +20,9 @@ type App struct {
 }
 
 func New() *App {
-	apiLogger = logrus.New()
-	apiLogger.SetFormatter(&logrus.JSONFormatter{})
-	apiLogger.SetLevel(logrus.DebugLevel)
+	ApiLogger = logrus.New()
+	ApiLogger.SetFormatter(&logrus.JSONFormatter{})
+	ApiLogger.SetLevel(logrus.DebugLevel)
 	return &App{
 		Router: httprouter.New(),
 	}
@@ -32,9 +32,11 @@ func (a *App) GlobalMiddleware(mid ...MiddleWare) {
 	a.globalMiddlewares = mid
 }
 
-func (a *App) Endpoints(e Endpoints) {
-	for i := 0; i < len(e); i++ {
-		a.Handle(e[i].Method, e[i].Path, e[i].EndpointHandler, e[i].MiddlewareHandlers...)
+func (a *App) Endpoints(ep ...Endpoints) {
+	for x := 0; x < len(ep); x++ {
+		for i := 0; i < len(ep[x]); i++ {
+			a.Handle(ep[x][i].Method, ep[x][i].Path, ep[x][i].EndpointHandler, ep[x][i].MiddlewareHandlers...)
+		}
 	}
 }
 
@@ -63,10 +65,11 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 		}
 	}
 
+	// Our wrapped function chain in a compatible httprouter Handle func
 	a.Router.Handle(verb, path, func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		finalHandler(w, r, params) // our wrapped function chain
+		finalHandler(w, r, params)
 	})
-	apiLogger.WithFields(logrus.Fields{"path": path}).Debug("added route")
+	ApiLogger.WithFields(logrus.Fields{"path": path}).Debug("added route")
 }
 
 func StartAPI(server *http.Server) {
@@ -80,17 +83,17 @@ func StartAPI(server *http.Server) {
 	// Blocking main and waiting for shutdown.
 	select {
 	case err := <-serverErrors:
-		apiLogger.WithError(err).Error("Error starting server")
+		ApiLogger.WithError(err).Error("Error starting server")
 	case <-osSignals:
-		apiLogger.Info("shutdown signal recieved shedding connections...")
+		ApiLogger.Info("shutdown received shedding connections...")
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*11)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			apiLogger.WithError(err).Error("Graceful shutdown did not complete in allowed time")
+			ApiLogger.WithError(err).Error("graceful shutdown did not complete in allowed time")
 			if err := server.Close(); err != nil {
-				apiLogger.WithError(err).Error("Could not stop http server")
+				ApiLogger.WithError(err).Error("could not stop http server")
 			}
 		}
-		apiLogger.Info("Shutdown OK")
+		ApiLogger.Info("shutdown OK")
 	}
 }
