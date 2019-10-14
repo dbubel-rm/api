@@ -2,20 +2,18 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/dbubel/api"
 	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
 	"time"
 
 	"net/http"
 )
 
 func main() {
-	log := logrus.New()
-	log.SetFormatter(&logrus.JSONFormatter{})
-	log.SetLevel(logrus.DebugLevel)
 
-	app := api.NewBasic(log)
+
+	app := api.New()
 	app.GlobalMiddleware(globalmiddle)
 
 	endpoints := api.Endpoints{
@@ -46,7 +44,8 @@ func handleit(w http.ResponseWriter, r *http.Request, params httprouter.Params) 
 		ID:    "123456",
 		Index: 1337,
 	}
-	api.RespondJSON(w, r, http.StatusOK, f)
+	_=f
+	api.RespondError(w, r,errors.New("ERRO"), http.StatusBadRequest)
 }
 
 func middlethis(next api.Handler) api.Handler {

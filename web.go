@@ -13,15 +13,16 @@ import (
 
 type MiddleWare func(Handler) Handler
 type Handler func(w http.ResponseWriter, r *http.Request, params httprouter.Params)
-var apiLogger *logrus.Logger
 
 type App struct {
 	Router            *httprouter.Router
 	globalMiddlewares []MiddleWare
 }
 
-func NewBasic(logger *logrus.Logger) *App {
-	apiLogger = logger
+func New() *App {
+	apiLogger = logrus.New()
+	apiLogger.SetFormatter(&logrus.JSONFormatter{})
+	apiLogger.SetLevel(logrus.DebugLevel)
 	return &App{
 		Router: httprouter.New(),
 	}
@@ -82,7 +83,7 @@ func StartAPI(server *http.Server) {
 		apiLogger.WithError(err).Error("Error starting server")
 	case <-osSignals:
 		apiLogger.Info("shutdown signal recieved shedding connections...")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second * 11)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*11)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
 			apiLogger.WithError(err).Error("Graceful shutdown did not complete in allowed time")

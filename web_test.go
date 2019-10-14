@@ -11,12 +11,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
 var logger *log.Logger
+
 func init() {
 	logger = log.New()
 }
 func TestApp_SimpleRoute(t *testing.T) {
-	var app = NewBasic(logger)
+	var app = New()
 
 	testHandler := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"msg": "payload"})
@@ -34,7 +36,7 @@ func TestApp_SimpleRoute(t *testing.T) {
 }
 
 func TestApp_GlobalMiddleware(t *testing.T) {
-	var app = NewBasic(logger)
+	var app = New()
 	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"message": r.Context().Value("shared")})
 	}
@@ -59,15 +61,16 @@ func TestApp_GlobalMiddleware(t *testing.T) {
 }
 
 func TestApp_RouteMiddleware(t *testing.T) {
-	var app = NewBasic(logger)
+	var app = New()
 	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"message": r.Context().Value("shared")})
 	}
-	app.Handle(http.MethodGet, "/test", testHandler)
+	app.Handle(http.MethodGet, "/test", testHandler, middlwareOne)
 
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	w := httptest.NewRecorder()
 	app.Router.ServeHTTP(w, r)
+
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	resp, _ := ioutil.ReadAll(w.Body)
@@ -91,17 +94,17 @@ func TestApp_RouteMiddleware(t *testing.T) {
 
 func middlwareOne(next Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		ctx := context.WithValue(r.Context(), "globalone","valueone")
-		ctx = context.WithValue(ctx, "shared","valueone")
+		ctx := context.WithValue(r.Context(), "globalone", "valueone")
+		ctx = context.WithValue(ctx, "shared", "valueone")
 		next(w, r.WithContext(ctx), params)
 	}
 }
- func middlewareTwo(next Handler) Handler {
+func middlewareTwo(next Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		sharedValue := r.Context().Value("shared").(string)
 		sharedValue = sharedValue + "valuetwo"
-		ctx := context.WithValue(r.Context(), "globaltwo","valuetwo")
-		ctx = context.WithValue(ctx, "shared",sharedValue)
+		ctx := context.WithValue(r.Context(), "globaltwo", "valuetwo")
+		ctx = context.WithValue(ctx, "shared", sharedValue)
 		next(w, r.WithContext(ctx), params)
 	}
 }
