@@ -52,8 +52,6 @@ func globalmiddle(next api.Handler) api.Handler {
 }
 
 func main() {
-	apiHandlers := api.New()
-	apiHandlers.GlobalMiddleware(globalmiddle)
 
 	endpoints := api.Endpoints{
 		api.NewEnpoint(http.MethodGet, "/test", getit),
@@ -66,6 +64,9 @@ func main() {
 
 	endpoints.Use(middlethis)
 	moreEndpoints.Use(middlethat)
+
+	apiHandlers := api.New()
+	apiHandlers.GlobalMiddleware(globalmiddle)
 	apiHandlers.Endpoints(endpoints, moreEndpoints)
 
 	api.StartAPI(&http.Server{
