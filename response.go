@@ -5,23 +5,23 @@ import (
 	"net/http"
 )
 
-func RespondError(w http.ResponseWriter, r *http.Request, err error, code int, description ...string) {
+func (a *App) RespondError(w http.ResponseWriter, r *http.Request, err error, code int, description ...string) {
 	switch err.(type) {
 	default:
-		RespondJSON(w, r, code, map[string]interface{}{"error": err.Error(), "description": description})
+		a.RespondJSON(w, r, code, map[string]interface{}{"error": err.Error(), "description": description})
 	case InvalidError:
-		RespondJSON(w, r, code, err)
+		a.RespondJSON(w, r, code, err)
 	}
 }
 
-func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+func (a *App) RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
 	if code == http.StatusNoContent || data == nil {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	} else {
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			RespondError(w, r, err, http.StatusInternalServerError)
+			a.RespondError(w, r, err, http.StatusInternalServerError)
 			return
 		}
 
@@ -29,10 +29,10 @@ func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interfac
 		w.WriteHeader(code)
 		w.Write(jsonData)
 	}
-	logRequest(r, code)
+	a.logRequest(r, code)
 }
 
-func Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
+func (a *App) Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
 	if code == http.StatusNoContent || data == nil {
 		w.WriteHeader(code)
 		return
@@ -42,5 +42,5 @@ func Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
 		w.WriteHeader(code)
 		w.Write(data)
 	}
-	logRequest(r, code)
+	a.logRequest(r, code)
 }

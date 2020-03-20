@@ -11,11 +11,11 @@ var Log200s = true
 var Log300s = true
 var Log400s = true
 var Log500s = true
-var ApiLogger *logrus.Logger
 
-func logRequest(r *http.Request, code int) {
+
+func (a *App) logRequest(r *http.Request, code int) {
 	printLog := func() {
-		ApiLogger.WithFields(logrus.Fields{
+		a.ApiLogger.WithFields(logrus.Fields{
 			"method":     r.Method,
 			"url":        r.RequestURI,
 			"contentLen": r.ContentLength,
