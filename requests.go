@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/go-playground/validator"
@@ -11,30 +10,13 @@ import (
 // validate provides a validator for checking models.
 var validate = validator.New()
 
-// Invalid describes a validation error belonging to a specific field.
-type Invalid struct {
-	Fld string `json:"field_name"`
-	Err string `json:"error"`
-}
-
-// InvalidError is a custom error type for invalid fields.
-type InvalidError []Invalid
-
-// Error implements the error interface for InvalidError.
-func (err InvalidError) Error() string {
-	var str string
-	for _, v := range err {
-		str = fmt.Sprintf("%s,{%s:%s}", str, v.Fld, v.Err)
-	}
-	return str
-}
-
 // Unmarshal decodes the input to the struct type and checks the
 // fields to verify the value is in a proper state.
 func UnmarshalJSON(r io.Reader, v interface{}) error {
 	if err := json.NewDecoder(r).Decode(v); err != nil {
 		return err
 	}
+
 	var inv InvalidError
 	if fve := validate.Struct(v); fve != nil {
 		for _, fe := range fve.(validator.ValidationErrors) {

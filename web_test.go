@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var logger *log.Logger
+var logger *apiLogger.Logger
 
 func init() {
 	logger = log.New()

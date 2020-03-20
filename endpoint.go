@@ -2,23 +2,23 @@ package api
 
 type Endpoints []endpoint
 type endpoint struct {
-	Method             string
+	Verb               string
 	Path               string
 	EndpointHandler    Handler
 	MiddlewareHandlers []MiddleWare
 }
 
-func NewEnpoint(method, path string, endpointHandler Handler, mid ...MiddleWare) endpoint {
+func NewEndpoint(method, path string, endpointHandler Handler, mid ...MiddleWare) endpoint {
 	return endpoint{
-		Method:             method,
+		Verb:               method,
 		Path:               path,
 		EndpointHandler:    endpointHandler,
 		MiddlewareHandlers: mid,
 	}
 }
 
-func (ep Endpoints) Use(mid ...MiddleWare) {
-	for i := 0; i < len(ep); i++ {
-		ep[i].MiddlewareHandlers = append(ep[i].MiddlewareHandlers, mid...)
+func (e Endpoints) Use(mid ...MiddleWare) {
+	for i := 0; i < len(e); i++ {
+		e[i].MiddlewareHandlers = append(e[i].MiddlewareHandlers, mid...)
 	}
 }

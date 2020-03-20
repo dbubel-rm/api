@@ -54,24 +54,24 @@ func globalmiddle(next api.Handler) api.Handler {
 func main() {
 
 	endpoints := api.Endpoints{
-		api.NewEnpoint(http.MethodGet, "/test", getit),
-		api.NewEnpoint(http.MethodGet, "/test/:paramOne", getit),
+		api.NewEndpoint(http.MethodGet, "/test", getit),
+		api.NewEndpoint(http.MethodGet, "/test/:paramOne", getit),
 	}
 
 	moreEndpoints := api.Endpoints{
-		api.NewEnpoint(http.MethodPost, "/test", postit),
+		api.NewEndpoint(http.MethodPost, "/test", postit),
 	}
 
 	endpoints.Use(middlethis)
 	moreEndpoints.Use(middlethat)
 
-	apiHandlers := api.New()
-	apiHandlers.GlobalMiddleware(globalmiddle)
-	apiHandlers.Endpoints(endpoints, moreEndpoints)
+	app := api.NewDefault()
+	app.GlobalMiddleware(globalmiddle)
+	app.Endpoints(endpoints, moreEndpoints)
 
-	api.StartAPI(&http.Server{
+	app.Run(&http.Server{
 		Addr:           ":8000",
-		Handler:        apiHandlers.Router,
+		Handler:        app.Router,
 		ReadTimeout:    time.Second * 10,
 		WriteTimeout:   time.Second * 10,
 		MaxHeaderBytes: 1 << 20,

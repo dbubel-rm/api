@@ -11,22 +11,31 @@ import (
 	"time"
 )
 
+var apiLogger *logrus.Logger
+
 type MiddleWare func(Handler) Handler
 type Handler func(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 
 type App struct {
 	Router            *httprouter.Router
 	globalMiddlewares []MiddleWare
-	ApiLogger *logrus.Logger
 }
 
-func New() *App {
-	ApiLogger := logrus.New()
-	ApiLogger.SetFormatter(&logrus.JSONFormatter{})
-	ApiLogger.SetLevel(logrus.DebugLevel)
+func New(log *logrus.Logger) *App {
+	apiLogger = log
 	return &App{
-		Router: httprouter.New(),
-		ApiLogger:ApiLogger,
+		Router:            httprouter.New(),
+		globalMiddlewares: make([]MiddleWare, 0, 0),
+	}
+}
+
+func NewDefault() *App {
+	apiLogger = logrus.New()
+	apiLogger.SetLevel(logrus.DebugLevel)
+	apiLogger.SetFormatter(&logrus.JSONFormatter{})
+	return &App{
+		Router:            httprouter.New(),
+		globalMiddlewares: make([]MiddleWare, 0, 0),
 	}
 }
 
@@ -34,19 +43,19 @@ func (a *App) GlobalMiddleware(mid ...MiddleWare) {
 	a.globalMiddlewares = mid
 }
 
-func (a *App) Endpoints(ep ...Endpoints) {
-	for x := 0; x < len(ep); x++ {
-		for i := 0; i < len(ep[x]); i++ {
-			a.Handle(ep[x][i].Method, ep[x][i].Path, ep[x][i].EndpointHandler, ep[x][i].MiddlewareHandlers...)
+func (a *App) Endpoints(e ...Endpoints) {
+	for x := 0; x < len(e); x++ {
+		for i := 0; i < len(e[x]); i++ {
+			a.Handle(e[x][i].Verb, e[x][i].Path, e[x][i].EndpointHandler, e[x][i].MiddlewareHandlers...)
 		}
 	}
 }
 
-func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares ...MiddleWare) {
+func (a *App) Handle(verb string, path string, finalHandler Handler, middleware ...MiddleWare) {
 	// Wrap all the route specific middleware
-	for i := len(middlwares) - 1; i >= 0; i-- {
-		if middlwares[i] != nil {
-			finalHandler = middlwares[i](finalHandler)
+	for i := len(middleware) - 1; i >= 0; i-- {
+		if middleware[i] != nil {
+			finalHandler = middleware[i](finalHandler)
 		}
 	}
 
@@ -71,10 +80,10 @@ func (a *App) Handle(verb string, path string, finalHandler Handler, middlwares 
 	a.Router.Handle(verb, path, func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		finalHandler(w, r, params)
 	})
-	a.ApiLogger.WithFields(logrus.Fields{"path": path}).Debug("added route")
+	apiLogger.WithFields(logrus.Fields{"path": path}).Debug("added route")
 }
 
-func (a *App) StartAPI(server *http.Server) {
+func (a *App) Run(server *http.Server) {
 	serverErrors := make(chan error, 1)
 	osSignals := make(chan os.Signal, 1)
 	signal.Notify(osSignals, os.Interrupt, syscall.SIGTERM)
@@ -82,20 +91,22 @@ func (a *App) StartAPI(server *http.Server) {
 		serverErrors <- server.ListenAndServe()
 	}()
 
+	apiLogger.WithFields(logrus.Fields{"addr": server.Addr}).Info("server starting")
+
 	// Blocking main and waiting for shutdown.
 	select {
 	case err := <-serverErrors:
-		a.ApiLogger.WithError(err).Error("Error starting server")
+		apiLogger.WithError(err).Error("error starting server")
 	case <-osSignals:
-		a.ApiLogger.Info("shutdown received shedding connections...")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*11)
+		apiLogger.Info("shutdown received shedding connections...")
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 		defer cancel()
 		if err := server.Shutdown(ctx); err != nil {
-			a.ApiLogger.WithError(err).Error("graceful shutdown did not complete in allowed time")
+			apiLogger.WithError(err).Error("graceful shutdown did not complete in allowed time")
 			if err := server.Close(); err != nil {
-				a.ApiLogger.WithError(err).Error("could not stop http server")
+				apiLogger.WithError(err).Error("could not stop http server")
 			}
 		}
-		a.ApiLogger.Info("shutdown OK")
+		apiLogger.Info("shutdown OK")
 	}
 }
