@@ -43,7 +43,6 @@ func RespondJSON(w http.ResponseWriter, r *http.Request, code int, data interfac
 func Respond(w http.ResponseWriter, r *http.Request, code int, data []byte) {
 	if code == http.StatusNoContent || data == nil {
 		w.WriteHeader(code)
-		return
 	} else {
 		contentType := http.DetectContentType(data)
 		w.Header().Set("Content-Type", contentType)
