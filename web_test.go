@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,13 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var logger *apiLogger.Logger
 
-func init() {
-	logger = log.New()
-}
 func TestApp_SimpleRoute(t *testing.T) {
-	var app = New()
+	var app = NewDefault()
 
 	testHandler := func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"msg": "payload"})
@@ -36,7 +31,7 @@ func TestApp_SimpleRoute(t *testing.T) {
 }
 
 func TestApp_GlobalMiddleware(t *testing.T) {
-	var app = New()
+	var app = NewDefault()
 	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"message": r.Context().Value("shared")})
 	}
@@ -61,7 +56,7 @@ func TestApp_GlobalMiddleware(t *testing.T) {
 }
 
 func TestApp_RouteMiddleware(t *testing.T) {
-	var app = New()
+	var app = NewDefault()
 	testHandler := func(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
 		RespondJSON(w, r, http.StatusOK, map[string]interface{}{"message": r.Context().Value("shared")})
 	}
@@ -75,21 +70,6 @@ func TestApp_RouteMiddleware(t *testing.T) {
 	resp, _ := ioutil.ReadAll(w.Body)
 	assert.JSONEq(t, `{"message":"valueone"}`, string(resp))
 }
-
-//
-
-//
-//testMiddlware := func(next Handler) Handler {
-//	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-//		next(w, r, params)
-//	}
-//}
-//
-//testMiddlware2 := func(next Handler) Handler {
-//	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-//		next(w, r, params)
-//	}
-//}
 
 func middlwareOne(next Handler) Handler {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
