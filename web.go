@@ -2,13 +2,14 @@ package api
 
 import (
 	"context"
-	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
+	"github.com/sirupsen/logrus"
 )
 
 var apiLogger *logrus.Logger

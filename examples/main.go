@@ -5,23 +5,25 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/dbubel/api"
 	"github.com/julienschmidt/httprouter"
-	"time"
-	"github.com/satori/go.uuid"
-	"net/http"
+	uuid "github.com/satori/go.uuid"
 )
 
 type NullTime sql.NullTime
 type NullString sql.NullString
 
 type Foo struct {
-	ID    string `json:"id"  validate:"required"`
-	Index int    `json:"index" validate:"required"`
-	CreatedAt NullTime
+	ID         string `json:"id"  validate:"required"`
+	Index      int    `json:"index" validate:"required"`
+	CreatedAt  NullTime
 	ReportedAt NullTime
-	Status NullString
+	Status     NullString
 }
+
 func (ns *NullString) MarshalJSON() ([]byte, error) {
 	if !ns.Valid {
 		return []byte("null"), nil
@@ -48,12 +50,11 @@ func postit(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func getit(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	orgId := orgIdHelper(r.Context())
+	// orgId := orgIdHelper(r.Context())
 	api.RespondJSON(w, r, http.StatusOK, &Foo{
-		ID:    orgId.String(),
-		Index: 1337,
-		CreatedAt:NullTime{Time:time.Now(), Valid:true},
-		ReportedAt:NullTime{Valid:false},
+		Index:      1337,
+		CreatedAt:  NullTime{Time: time.Now(), Valid: true},
+		ReportedAt: NullTime{Valid: false},
 	})
 }
 
@@ -98,7 +99,7 @@ func main() {
 	}
 
 	endpoints.Use(middlethat)
-	moreEndpoints.Use(middlethat)
+	// moreEndpoints.Use(middlethat)
 
 	app := api.NewDefault()
 	app.GlobalMiddleware(globalmiddle)

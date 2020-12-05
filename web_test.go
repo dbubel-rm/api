@@ -2,15 +2,14 @@ package api
 
 import (
 	"context"
-	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
 )
-
 
 func TestApp_SimpleRoute(t *testing.T) {
 	var app = NewDefault()
